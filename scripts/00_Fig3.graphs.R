@@ -6,16 +6,17 @@ library(ggpubr)
 library(viridis)
 library(ggbreak)
 
+rm(list = ls())
 
-### load model
-out<-readRDS(here("data", "RN_multitaxa_jaguar_prey.rds"))
 
-#### Constructing DF of data from the output model
-DF<-as.data.frame(out$BUGSoutput$summary)
+#### Load necessary data
+covs<-read.csv2(here("data","covs.csv"))
+DF<-read.csv2(here("data","DF.MR_MSOM_RN_results.csv"))
+rownames(DF)<-DF$X
 species.names<- c("Cabass","Cunpac","Dasypu", "Mazama", "Nasnas", "Taypec", "Tapter", "Tamtet", "Didelp", "Dictaj", "Procan", "Dasypr", "Certho", "Myrtri")
 
 #### CREATING A DATAFRAME INCLUDING THE ESTIMATED ABUNDANCE VALUES FOR INDIVIDUAL SPECIES
-sp.abundance<-DF[c(1,3,7)] %>% filter(grepl("Z", row.names(DF)))%>%
+sp.abundance<-DF[c(2,4,8)] %>% filter(grepl("Z", row.names(DF)))%>%
   #mutate_at(1:3, round, 2)%>%
   mutate(Ponto=c(rep(seq(1:52),14),
                  rep(seq(1:59),14),
@@ -50,9 +51,9 @@ sp.abundance<-DF[c(1,3,7)] %>% filter(grepl("Z", row.names(DF)))%>%
   mutate(deployment=paste(region,Ponto,sep="_"))%>%
   mutate(diet=ifelse(species %in% c("Dasypu","Mazama","Nasnas","Dictaj","Taypec"),"44%",
                      ifelse(species %in% c("Dasypr","Cunpac","Procan","Myrtri","Tamtet"),"15%","3%")))%>%
-  relocate(deployment,region,species,mean,"2.5%","97.5%")%>%
-  rename(lowerCI="2.5%",
-         upperCI="97.5%")%>%                      
+  relocate(deployment,region,species,mean,"X2.5.","X97.5.")%>%
+  rename(lowerCI="X2.5.",
+         upperCI="X97.5.")%>%                      
   print()
 
 ##### INDIVIDUAL SPECIES ABUNDANCES VALUES BY REGIONS GRAPH
@@ -98,7 +99,6 @@ write.csv(abunda_regio_sp,here("data", "abu.region.sp.csv"))
 
 ####### EXPLORING THE BIOMASS OF INDIVIDUAL SPECIES - ABUNDANCE * MEAN SIZE
 # CREATING A DATA.FRAMA INCLUING THE MEAN SIZE OF FOCAL SPECIES
-species.names
 size <- c(6,9.5,6,24,5.1,32,160,4.5,1.09,25,5.4,4.5,6.5,30.5)
 biomass<- as.data.frame(cbind(species.names,size))
 biomass$size<-as.numeric(biomass$size)
@@ -136,4 +136,3 @@ sp.biomass.g<-sp.abundance%>%
 ggarrange(sp.abundance.g, sp.biomass.g, 
           nrow=2,
           labels = c("a)","b)"), vjust=1, hjust=0.05)
-s

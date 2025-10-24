@@ -3,18 +3,13 @@ library(tidyverse)
 library(rjags)
 library(brms)
 
-
-
-#### load necessary data
+#### Load necessary data
 covs<-read.csv2(here("data","covs.csv"))
-### load model
-out<-readRDS(here("data", "RN_multitaxa_jaguar_prey.rds"))
-
-#### Constructing DF of data from the output model
-DF<-as.data.frame(out$BUGSoutput$summary)
+DF<-read.csv2(here("data","DF.MR_MSOM_RN_results.csv"))
+rownames(DF)<-DF$X
 
 ##### Creating the data.frame with the aggregated ABUNDANCE BY SITE AND REGIONS
-ABU<-DF[c(1,3,7)] %>% filter(grepl("AB", row.names(DF)))%>%
+ABU<-DF[c(2,4,8)] %>% filter(grepl("AB", row.names(DF)))%>%
   mutate_at(1:3, round, 2)%>%
   mutate(Ponto=c(seq(1:52),
                  seq(1:59),
@@ -37,9 +32,9 @@ ABU<-DF[c(1,3,7)] %>% filter(grepl("AB", row.names(DF)))%>%
   mutate(region = fct_relevel(region, "APA-SFX","EEB","LA","PNG","NITA", "NSV", "PETAR", "PECB", "PNI"))%>%
   mutate(species=c(rep("AB", 496)))%>%
   mutate(deployment=paste(region,Ponto,sep="_"))%>%
-  relocate(deployment,region,species,mean,"2.5%","97.5%")%>%
-  rename(lowerCI="2.5%",
-         upperCI="97.5%")%>%                      
+  relocate(deployment,region,species,mean,"X2.5.","X97.5.")%>%
+  rename(lowerCI="X2.5.",
+         upperCI="X97.5.")%>%                      
   print()
 
 ### add the predictors
@@ -59,7 +54,7 @@ saveRDS(ABU.model, here("data", "ABU.model.rds"))
 
 
 ##### Creating the data.frame with the aggregated BIOMASS BY SITE AND REGIONS
-BI<-DF[c(1,3,7)] %>% filter(grepl("BI", row.names(DF)))%>%
+BI<-DF[c(2,4,8)] %>% filter(grepl("BI", row.names(DF)))%>%
   .[1:496,]%>% ### Selecting only the aggregated biomass
   mutate_at(1:3, round, 2)%>%
   mutate(Ponto=c(seq(1:52),
@@ -83,12 +78,12 @@ BI<-DF[c(1,3,7)] %>% filter(grepl("BI", row.names(DF)))%>%
   mutate(region = fct_relevel(region, "APA-SFX","EEB","LA","PNG","NITA", "NSV", "PETAR", "PECB", "PNI"))%>%
   mutate(species=c(rep("BI", 496)))%>%
   mutate(deployment=paste(region,Ponto,sep="_"))%>%
-  relocate(deployment,region,species,mean,"2.5%","97.5%")%>%
-  rename(lowerCI="2.5%",
-         upperCI="97.5%")                
+  relocate(deployment,region,species,mean,"X2.5.","X97.5.")%>%
+  rename(lowerCI="X2.5.",
+         upperCI="X97.5.")                
   
-BI.1<-merge(BI,cov[-1],by="deployment")
-names(BI.1)
+BI.1<-merge(BI,covs[-1],by="deployment")
+
 ##### SR
 BI.model<-brm(log(mean) ~ AccessCost + Elevation + EVIdiv_shan+ (1|region), 
               data=BI.1,

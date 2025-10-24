@@ -8,21 +8,17 @@ library(viridis)
 library(ggbreak)
 
 
-#### load necessary data
-source(file = here("scripts","00_data_preparation.r"))
-### load model
-out<-readRDS(here("data", "RN_multitaxa_jaguar_prey.rds"))
-
-#### Constructing DF of data from the output model
-DF<-as.data.frame(out$BUGSoutput$summary)
-
+#### Load necessary data
+covs<-read.csv2(here("data","covs.csv"))
+DF<-read.csv2(here("data","DF.MR_MSOM_RN_results.csv"))
+rownames(DF)<-DF$X
 #### EXPLORING VARIATION IN THE SPECIES ABUNDANCE
 species.names<- c("Cabass","Cunpac","Dasypu", "Mazama", "Nasnas", "Taypec", "Tapter", "Tamtet", "Didelp", "Dictaj", "Procan", "Dasypr", "Certho", "Mirtri")
 region.names<-c("APA-SFX","EEB","LA","NITA","NSV","PECB","PETAR","PNG","PNI")
 
 #### CREATING GRAPHS FOR FIGURE 2 - THE AGGREGATED ABUNDANCE BY REGIONS
 ##### EXPLORING THE AGGREGATED VALUES OF ABUNDANCE BY SITE AND REGIONS
-ABU<-DF[c(1,3,7)] %>% filter(grepl("AB", row.names(DF)))%>%
+ABU<-DF[c(2,4,8)] %>% filter(grepl("AB", row.names(DF)))%>%
   mutate_at(1:3, round, 2)%>%
   mutate(Ponto=c(seq(1:52),
                  seq(1:59),
@@ -45,9 +41,9 @@ ABU<-DF[c(1,3,7)] %>% filter(grepl("AB", row.names(DF)))%>%
   mutate(region = fct_relevel(region,"PNI","PECB","PNG","NSV","PETAR","NITA","LA","EEB","APA-SFX"))%>%
   mutate(species=c(rep("AB", 496)))%>%
   mutate(deployment=paste(region,Ponto,sep="_"))%>%
-  relocate(deployment,region,species,mean,"2.5%","97.5%")%>%
-  rename(lowerCI="2.5%",
-         upperCI="97.5%")%>%                      
+  relocate(deployment,region,species,mean,"X2.5.","X97.5.")%>%
+  rename(lowerCI="X2.5.",
+         upperCI="X97.5.")%>%                      
   print()
 
 ###### FIGURE 2A
@@ -71,7 +67,7 @@ ABU<-DF[c(1,3,7)] %>% filter(grepl("AB", row.names(DF)))%>%
 
 #### FIGURE 2B
 ##### GRAPH THE AGGREGATED BIOMASS - DATA WERE FILTERED UP TO 400 kg, TO IMPROVE VISUALIZATION OF THE MOST CONSUMED SPECIES
-(BIO<-DF[c(1,3,7)] %>% filter(grepl("BI", row.names(DF)))%>%
+(BIO<-DF[c(2,4,8)] %>% filter(grepl("BI", row.names(DF)))%>%
     .[1:496,]%>% ### Selecting only the aggregated biomass
     mutate_at(1:3, round, 2)%>%
     mutate(Ponto=c(seq(1:52),
@@ -95,9 +91,9 @@ ABU<-DF[c(1,3,7)] %>% filter(grepl("AB", row.names(DF)))%>%
     mutate(region = fct_relevel(region,"PNI","PECB","PNG","NSV","PETAR","NITA","LA","EEB","APA-SFX"))%>%
     mutate(species=c(rep("BI", 496)))%>%
     mutate(deployment=paste(region,Ponto,sep="_"))%>%
-    relocate(deployment,region,species,mean,"2.5%","97.5%")%>%
-    rename(lowerCI="2.5%",
-           upperCI="97.5%")%>%                  
+    relocate(deployment,region,species,mean,"X2.5.","X97.5.")%>%
+    rename(lowerCI="X2.5.",
+           upperCI="X97.5.")%>%                  
     ggplot(aes(y=mean, x=region, fill = region, colour = region))+
     geom_boxplot(alpha = 0.4)+
     geom_jitter(width = 0.05,size=1)+
