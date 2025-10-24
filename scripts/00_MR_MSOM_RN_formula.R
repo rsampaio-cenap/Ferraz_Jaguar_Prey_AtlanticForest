@@ -1,0 +1,116 @@
+##----- Specify Multi-region Community model in JAGS language ----- adapted from Sutherland...
+sink(file = here("data","ab.prey.txt"))
+cat("model {
+   		##----- global-level priors
+			# parameter related to abundance
+			mu.a0.global ~ dnorm(0,0.01)  # intercept on lambda
+      mu.a1.global ~ dnorm(0,0.01)  # Cost
+      mu.a2.global ~ dnorm(0,0.01)  # Elevation
+      mu.a3.global ~ dnorm(0,0.01)  # Shannon
+     
+			# parameter related to detectability
+			mu.r0.global ~ dnorm(0,0.01)  # intercept on detection
+      mu.r1.global ~ dnorm(0,0.01)  # Julian days
+
+      # standard deviation
+			# parameter related to abundance
+			sigma.a0.global ~ dunif(0,10)	# intercept
+      sigma.a1.global ~ dunif(0,10)	# Cost
+      sigma.a2.global ~ dunif(0,10)	# Elevation
+      sigma.a3.global ~ dunif(0,10)	# Shannon
+
+			# parameter related to detectability
+			sigma.r0.global ~ dunif(0,10) # intercept on detection
+			sigma.r1.global ~ dunif(0,10) # Julian days
+			
+			# create precision
+			# parameter related to abundance
+			mu.tau.a0.global <- pow(sigma.a0.global,-2)
+			mu.tau.a1.global <- pow(sigma.a1.global,-2)
+			mu.tau.a2.global <- pow(sigma.a2.global,-2)
+			mu.tau.a3.global <- pow(sigma.a3.global,-2)
+			#mu.tau.a4.global <- pow(sigma.a4.global,-2)
+			
+			# parameter related to detectability
+			mu.tau.r0.global <- pow(sigma.r0.global,-2)
+			mu.tau.r1.global <- pow(sigma.r1.global,-2)
+			
+			
+      ##----- Region-level priors
+		  for(n in 1:nregion){
+		  
+		    # abundance intercepts
+	      a0.region[n] ~ dnorm(mu.a0.global,mu.tau.a0.global)
+	      tau.a0.region[n] <- mu.tau.a0.global
+	      
+	      a1.region[n] ~ dnorm(mu.a1.global,mu.tau.a1.global)
+	      tau.a1.region[n] <- mu.tau.a1.global
+	      
+	      a2.region[n] ~ dnorm(mu.a2.global,mu.tau.a2.global)
+	      tau.a2.region[n] <- mu.tau.a2.global
+	      
+	      a3.region[n] ~ dnorm(mu.a3.global,mu.tau.a3.global)
+	      tau.a3.region[n] <- mu.tau.a3.global
+	      
+	      #a4.region[n] ~ dnorm(mu.a4.global,mu.tau.a4.global)
+	      #tau.a4.region[n] <- mu.tau.a4.global
+	      
+	      # detection intercept
+	      r0.region[n] ~ dnorm(mu.r0.global,mu.tau.r0.global)
+	      tau.r0.region[n] <- mu.tau.r0.global
+	      
+	      r1.region[n] ~ dnorm(mu.r1.global,mu.tau.r1.global)
+	      tau.r1.region[n] <- mu.tau.r1.global
+		  }#n
+      
+      ##----- Species-level priors
+			for (n in 1:nregion){
+			  for (i in 1:nspecies){
+       a0[i,n] ~ dnorm(a0.region[n],tau.a0.region[n])
+       a1[i,n] ~ dnorm(a1.region[n],tau.a1.region[n])
+       a2[i,n] ~ dnorm(a2.region[n],tau.a2.region[n])
+       a3[i,n] ~ dnorm(a3.region[n],tau.a3.region[n])
+       
+       r0[i,n] ~ dnorm(r0.region[n],tau.r0.region[n])
+       r1[i,n] ~ dnorm(r1.region[n],tau.r1.region[n])
+       }#i
+        }#n
+     
+			#Likelihood
+			for (n in 1:nregion){
+			   for (i in 1:nspecies){
+          for (j in 1:nsites[n]){
+      
+      #Ecological model for latent abundance of species i at sites j at regions n
+			#population abundances.
+       
+        log(lambda[j,i,n]) <- a0[i,n] + a1[i,n]*AccessCost[j,n] + a2[i,n]*Elevation[j,n] +
+                              a3[i,n]*EVIdiv_shan[j,n]
+                            
+        Z[j,i,n] ~ dpois(lambda[j,i,n]) # latent abundance of each species in each site
+        
+        BI.SP[j,i,n] <- Z[j,i,n] * biomass[i] # latent biomass for extant species
+        
+      
+			# detection process model
+				r[j,i,n] <- 1/(1+exp(-(r0[i,n] + r1[i,n]*Julian[n]))) 
+				                              
+				p[j,i,n] <- 1-pow(1-r[j,i,n],Z[j,i,n])
+				
+				y[j,i,n] ~ dbin(p[j,i,n], k)  # model observation data as binomial outcome with prob p and k trials
+		   	}#j
+         }#i
+          }#n
+          
+    ## counting species richness at site
+     for (n in 1:nregion){
+     for (j in 1:nsites[n]){
+     ## counting abundance at site
+        AB[j,n]	<- sum(Z[j,,n])	
+     ## couting biomass at site
+        BI[j,n] <- sum(Z[j,1:nspecies,n]*biomass)
+        }#j
+         }#n
+          }", fill=TRUE)
+sink()
+
