@@ -5,7 +5,7 @@ This repository contains data, models, results and R-codes needed to carry out t
 Ferraz et al.,. (submited). The loss of prey base may drive the jaguar (Panthera onca) toward extinction in the Atlantic Forest of South America.
 
 Description
-data data, models, results and other codes used in the analysis.
+data data, graphs, models and results used in the analysis.
 
 scripts analysis codes.
 
